@@ -1,0 +1,22 @@
+{
+  "name": "ironcad-desktop",
+  "version": "1.0.0",
+  "description": "IronCAD Desktop Client - Mac and Windows",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:all": "electron-builder --win --mac",
+    "generate-icons": "node scripts/generate-icons.js",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "electron-store": "8.1.0",
+    "electron-updater": "6.1.7"
+  },
+  "devDependencies": {
+    "electron": "^29.4.6",
+    "electron-builder": "^25.1.8"
+  }
+}

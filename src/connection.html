@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';" />
+<title>IronCAD — Connect</title>
+<style>
+  :root {
+    --bg: #0A0A0A; --panel: #111418; --line: #ffffff14;
+    --txt: #ffffff; --muted: #A8B2C0; --accent: #00d4f0; --danger: #ff6b6b;
+    --font: 'Rajdhani','Segoe UI',system-ui,sans-serif;
+    --mono: 'Share Tech Mono','IBM Plex Mono',ui-monospace,monospace;
+  }
+  * { box-sizing: border-box; }
+  html,body { height: 100%; margin: 0; }
+  body {
+    background: radial-gradient(1200px 600px at 50% -10%, #0d1b22 0%, var(--bg) 60%);
+    color: var(--txt); font-family: var(--font);
+    display: flex; align-items: center; justify-content: center; padding: 32px;
+    -webkit-user-select: none; user-select: none;
+  }
+  .wrap { width: 100%; max-width: 460px; }
+  .brand { text-align: center; margin-bottom: 28px; }
+  .logo {
+    font-size: 44px; font-weight: 800; letter-spacing: 8px; color: var(--txt);
+    text-shadow: 0 0 18px rgba(0,212,240,0.35);
+  }
+  .logo .ac { color: var(--accent); }
+  .tag { color: var(--muted); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; margin-top: 6px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
+  h1 { font-size: 19px; margin: 0 0 4px; font-weight: 700; }
+  .desc { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0 0 20px; }
+
+  button { font-family: var(--font); cursor: pointer; border: none; }
+  .primary {
+    width: 100%; background: var(--accent); color: #04141a; border-radius: 10px;
+    padding: 16px; font-size: 16px; font-weight: 800; letter-spacing: 0.5px;
+    text-transform: uppercase; transition: filter .15s;
+  }
+  .primary:hover { filter: brightness(1.08); }
+  .primary .sub { display:block; font-size: 11px; font-weight: 600; letter-spacing: .3px; text-transform: none; opacity: .8; margin-top: 4px; }
+
+  .secondary {
+    width: 100%; background: transparent; color: var(--txt); border: 1px solid var(--line);
+    border-radius: 10px; padding: 14px; font-size: 14px; font-weight: 700; margin-top: 14px;
+  }
+  .secondary:hover { border-color: var(--accent); }
+  .secondary .sub { display:block; font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 4px; }
+
+  .manual { margin-top: 14px; display: none; }
+  .manual.open { display: block; }
+  label { display:block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  input {
+    width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+    padding: 13px; color: var(--txt); font-size: 15px; font-family: var(--mono); outline: none;
+  }
+  input:focus { border-color: var(--accent); }
+  .note { color: #A8B2C088; font-size: 11px; margin: 8px 0 0; line-height: 1.4; }
+  .connectBtn {
+    width: 100%; background: var(--accent); color: #04141a; border-radius: 8px;
+    padding: 14px; font-size: 15px; font-weight: 800; text-transform: uppercase; margin-top: 12px;
+  }
+  .back { background: none; color: var(--muted); width: 100%; padding: 8px; font-size: 13px; margin-top: 4px; }
+  .err {
+    display: none; margin-top: 16px; background: rgba(255,107,107,0.08);
+    border: 1px solid rgba(255,107,107,0.28); border-radius: 8px; padding: 12px;
+    color: var(--danger); font-size: 13px; line-height: 1.4;
+  }
+  .err.show { display: block; }
+  .hint { color: #A8B2C055; font-size: 12px; text-align: center; margin-top: 22px; }
+  [disabled] { opacity: .6; pointer-events: none; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">IRON<span class="ac">CAD</span></div>
+      <div class="tag">ITI Emergency Response Team</div>
+    </div>
+
+    <div class="card">
+      <h1>Connect to IronCAD</h1>
+      <p class="desc">Choose how this workstation connects. Most users should use the default IronCAD hosting.</p>
+
+      <button class="primary" id="btnDefault">
+        Default IronCAD Hosting
+        <span class="sub" id="defaultUrl">api.ironcad.tech · recommended</span>
+      </button>
+
+      <button class="secondary" id="btnShowManual">
+        Manual server address
+        <span class="sub">For self-hosted / on-prem agencies</span>
+      </button>
+
+      <div class="manual" id="manualBox">
+        <label for="url">Agency server address</label>
+        <input id="url" type="text" placeholder="https://ironcad.youragency.gov" autocomplete="off" spellcheck="false" />
+        <p class="note">Must start with http:// or https://. HTTPS is recommended; use http:// only for a trusted LAN/on-prem server.</p>
+        <button class="connectBtn" id="btnConnect">Connect to Server</button>
+        <button class="back" id="btnBack">&larr; Back to options</button>
+      </div>
+
+      <div class="err" id="err"></div>
+    </div>
+
+    <p class="hint">Contact your system administrator if you don't know which option to use.</p>
+  </div>
+
+<script>
+  const api = window.ironcad || {};
+  const $ = (id) => document.getElementById(id);
+  const err = $('err');
+  function showErr(m){ err.textContent = m; err.classList.add('show'); }
+  function clearErr(){ err.classList.remove('show'); }
+  function setBusy(b){ document.querySelectorAll('button').forEach(el => el.toggleAttribute('disabled', b)); }
+
+  (async () => {
+    try {
+      if (api.getDefaultServerUrl) {
+        const d = await api.getDefaultServerUrl();
+        if (d) $('defaultUrl').textContent = d.replace(/^https?:\/\//,'') + ' · recommended';
+      }
+    } catch {}
+  })();
+
+  $('btnDefault').addEventListener('click', async () => {
+    clearErr(); setBusy(true);
+    $('btnDefault').firstChild && ($('btnDefault').childNodes[0].nodeValue = 'Connecting… ');
+    try {
+      const r = await api.useDefaultServer();
+      if (r && r.ok === false) { setBusy(false); showErr(r.error || 'Could not connect.'); }
+      // on success the main process navigates away from this page
+    } catch (e) { setBusy(false); showErr('Could not start connection.'); }
+  });
+
+  $('btnShowManual').addEventListener('click', () => {
+    clearErr();
+    $('manualBox').classList.add('open');
+    $('btnShowManual').style.display = 'none';
+    $('url').focus();
+  });
+
+  $('btnBack').addEventListener('click', () => {
+    clearErr();
+    $('manualBox').classList.remove('open');
+    $('btnShowManual').style.display = '';
+  });
+
+  function validUrl(v){
+    try { const u = new URL(v); return u.protocol === 'http:' || u.protocol === 'https:'; }
+    catch { return false; }
+  }
+
+  async function doConnect(){
+    clearErr();
+    let v = $('url').value.trim().replace(/\/+$/,'');
+    if (!v) { showErr('Enter your agency server address.'); return; }
+    if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+    if (!validUrl(v)) { showErr('Enter a valid address, e.g. https://ironcad.youragency.gov'); return; }
+    setBusy(true);
+    try {
+      const r = await api.configureServer(v);
+      if (r && r.ok === false) { setBusy(false); showErr(r.error || 'Could not connect.'); }
+    } catch (e) { setBusy(false); showErr('Could not start connection.'); }
+  }
+
+  $('btnConnect').addEventListener('click', doConnect);
+  $('url').addEventListener('keydown', (e) => { if (e.key === 'Enter') doConnect(); });
+</script>
+</body>
+</html>

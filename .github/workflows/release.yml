@@ -1,0 +1,65 @@
+# IronCAD Desktop — signed release builds (Windows + macOS).
+# Triggers on a version tag (e.g. v1.0.0). Certs/passwords come from repo SECRETS,
+# never the repo. Builds are signed + (macOS) notarized, then published to the
+# electron-updater feed via `--publish always`.
+#
+# Required GitHub repo secrets (Settings -> Secrets and variables -> Actions):
+#   macOS:   MAC_CSC_LINK (base64 of Developer ID Application .p12),
+#            MAC_CSC_KEY_PASSWORD, APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
+#   Windows (Azure Trusted Signing): AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET (secrets)
+#            + AZURE_CODE_SIGNING_ACCOUNT, AZURE_CODE_SIGNING_PROFILE (Actions variables/secrets;
+#              non-secret identifiers), optional AZURE_CODE_SIGNING_ENDPOINT.
+#            (Legacy .pfx path instead: WIN_CSC_LINK + WIN_CSC_KEY_PASSWORD.)
+#   Publish: GH_TOKEN (or a generic-server upload credential, per your feed)
+# See SIGNING.md for how to obtain the certs and stand up Azure Trusted Signing.
+
+name: release
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build, sign & notarize (macOS)
+        run: npx electron-builder --mac --publish always
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build & sign (Windows, Azure Trusted Signing)
+        run: npx electron-builder --win --publish always
+        env:
+          # Azure Trusted Signing — config.js enables signing when ACCOUNT is set:
+          AZURE_CODE_SIGNING_ACCOUNT: ${{ secrets.AZURE_CODE_SIGNING_ACCOUNT }}
+          AZURE_CODE_SIGNING_PROFILE: ${{ secrets.AZURE_CODE_SIGNING_PROFILE }}
+          AZURE_CODE_SIGNING_ENDPOINT: ${{ secrets.AZURE_CODE_SIGNING_ENDPOINT }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          # Legacy .pfx fallback (used only if the Azure account var is unset):
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}

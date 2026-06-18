@@ -1,0 +1,54 @@
+# IronCAD monorepo — normalize line endings to stop cross-platform CRLF/LF churn.
+# Default: treat everything as text, store LF in the repo, convert to native on checkout.
+* text=auto eol=lf
+
+# Source / config files — force LF (works on Windows via Git's core.autocrlf-agnostic checkout)
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.json  text eol=lf
+*.css   text eol=lf
+*.scss  text eol=lf
+*.html  text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.sql   text eol=lf
+*.sh    text eol=lf
+*.xml   text eol=lf
+*.svg   text eol=lf
+*.java  text eol=lf
+*.env.example text eol=lf
+
+# Windows-only scripts — must stay CRLF
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# Binary assets — never normalize or diff
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.icns  binary
+*.pdf   binary
+*.docx  binary
+*.xlsx  binary
+*.pptx  binary
+*.zip   binary
+*.gz    binary
+*.mp4   binary
+*.mov   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.eot   binary
+*.keystore binary
+*.jks   binary
+*.p12   binary
+*.apk   binary
+*.ipa   binary
